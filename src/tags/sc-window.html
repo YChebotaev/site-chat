@@ -1,0 +1,329 @@
+<sc-window class="sc-window" if="{!isHidden}" style="z-index:{opts.zIndex}">
+  <button class="sc-window-close-btn" id="buttonClose">&#x2716;</button>
+  <div class="sc-window-container">
+    <div class="sc-header">
+      <div class="sc-header-tabs">
+        <div class="sc-header-tab" id="tabPhone">
+          <div
+            class="sc-tab-icon sc-tab-icon-phone_{tabIconPhoneModifier}"
+          ></div>
+        </div>
+        <div class="sc-header-tab" id="tabMail">
+          <div class="sc-tab-icon sc-tab-icon-mail_{tabIconMailModifier}"></div>
+        </div>
+      </div>
+    </div>
+    <div if="{activeTab === 0}" class="sc-body">
+      <div class="sc-body-inner">
+        <div class="sc-body-header">Заказать обратный звонок</div>
+        <div class="sc-body-text">
+          Оставьте свой номер телефона, и мы перезвоним вам
+        </div>
+        <div class="sc-body-form">
+          <form id="formPhone">
+            <div class="sc-form-row">
+              <input
+                name="phoneNumber"
+                type="text"
+                class="sc-input-text"
+                placeholder="+7 912 034-51-01"
+              />
+            </div>
+
+            <div if="{opts.showDate}" class="sc-form-row sc-form-row-date">
+              <label class="sc-label">Когда вы хотите принять звонок?</label>
+              <select name="dateOption" class="sc-select">
+                <option value="0">Прямо сейчас</option>
+                <option value="1">В течении часа</option>
+                <option value="2">В ближайший рабочий день</option>
+                <option value="3">В эти выходные</option>
+              </select>
+            </div>
+
+            <div if="{opts.showTime}" class="sc-form-row  sc-form-row-time">
+              <label class="sc-label">Во сколько вам будет удобнее?</label>
+              <select name="timeOption" class="sc-select">
+                <option value="0">С утра</option>
+                <option value="1">Днем</option>
+                <option value="2">В обед</option>
+                <option value="3">После обеда</option>
+                <option value="4">Вечером</option>
+                <option value="5">Ночью</option>
+                <option value="6">В первой половине дня</option>
+                <option value="7">Во второй половине дня</option>
+              </select>
+            </div>
+            <div class="sc-form-row">
+              <button type="submit" class="sc-submit-btn">Жду звонка</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div if="{activeTab === 1}" class="sc-body">
+      <div class="sc-body-inner">
+        <div class="sc-body-header">Напишите нам</div>
+        <div class="sc-body-text">Оставьте нам сообщение, и мы ответим вам</div>
+        <div class="sc-body-form">
+          <form id="formMail">
+            <div class="sc-form-row">
+              <label class="sc-label">Ваш e&ndash;mail</label>
+              <input
+                name="emailAddres"
+                type="text"
+                class="sc-input-text"
+                placeholder="john@doe.com"
+              />
+            </div>
+
+            <div class="sc-form-row">
+              <label class="sc-label">Ваше сообщение</label>
+              <textarea
+                name="emailMessage"
+                class="sc-input-text"
+                placeholder="Перезвоните мне скорее"
+              ></textarea>
+            </div>
+
+            <div if="{opts.showPhone2}" class="sc-form-row">
+              <label class="sc-label">Номер телефона (необязательно)</label>
+              <input
+                name="phoneNumber2"
+                type="text"
+                class="sc-input-text"
+                placeholder="+7 912 034-51-01"
+              />
+            </div>
+
+            <div class="sc-form-row">
+              <button type="submit" class="sc-submit-btn">Жду ответа</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <a class="sc-footer" href="javascript: void(0);"
+      >Установите Site Chat на свой сайт</a
+    >
+  </div>
+
+  <script>
+    var self = this;
+
+    self.tabIconPhoneModifier = "default";
+    self.tabIconMailModifier = "default";
+
+    var tabs = [];
+
+    self.animate = function(animation, callback) {
+      callback = typeof callback === "function" ? callback : function() {};
+      if (self.isMounted) {
+        var classList = self.root.classList;
+        var data = self.root.dataset;
+        if (classList.contains("animated")) {
+          classList.remove("animated", data.currentAnimation);
+        }
+
+        var types = [
+          "webkitAnimationEnd",
+          "mozAnimationEnd",
+          "MSAnimationEnd",
+          "oanimationend",
+          "animationend"
+        ];
+
+        function endAnimation() {
+          for (var i = 0; i < types.length; i++) {
+            var type = types[i];
+            self.root.removeEventListener(type, endAnimation);
+          }
+          classList.remove("animated", animation);
+          data.currentAnimation = "";
+          callback();
+        }
+
+        for (var i = 0; i < types.length; i++) {
+          var type = types[i];
+          self.root.addEventListener(type, endAnimation);
+        }
+
+        data.currentAnimation = animation;
+        classList.add("animated", animation);
+      } else {
+        callback();
+      }
+    };
+
+    self.hide = function hideWindow() {
+      self.isHidden = true;
+      self.trigger("hide");
+      self.animate("slideOutRight", self.update);
+    };
+
+    self.show = function showWindow() {
+      self.isHidden = false;
+      self.update();
+      self.animate("slideInRight", function() {
+        self.trigger("show");
+      });
+    };
+
+    self.toggle = function() {
+      if (self.isHidden) {
+        self.show();
+      } else {
+        self.hide();
+      }
+    };
+
+    function showResult() {}
+
+    function defineFormHandler(formKey, handlerKey) {
+      var form = self[formKey];
+      var handler = self.opts.formHandler[handlerKey];
+      form.addEventListener(
+        "submit",
+        function(event) {
+          var data = {
+            phoneNumber: self.phoneNumber.value,
+            phoneNumber2: self.phoneNumber2.value,
+            date: self.dateOption.value,
+            time: self.timeOption.value,
+            emailMessage: self.emailMessage.value,
+            emailAddres: self.emailAddres.value
+          };
+
+          handler(data, showResult);
+
+          event.preventDefault();
+          event.stopPropagation();
+          return false;
+        },
+        true
+      );
+    }
+
+    function defineTab(config) {
+      var tab;
+      tabs.push(
+        (tab = {
+          name: config.name,
+          tabElement: config.tabElement,
+          modifierName: config.modifierName,
+          id: tabs.length
+        })
+      );
+
+      function isActive() {
+        return self.activeTab === tab.id;
+      }
+
+      tab.tabElement.addEventListener("click", function() {
+        isActive() || switchTab(tab.id);
+      });
+
+      tab.tabElement.addEventListener("mouseenter", function() {
+        if (!isActive()) {
+          self[tab.modifierName] = "hover";
+          self.update();
+        }
+      });
+
+      tab.tabElement.addEventListener("mouseleave", function() {
+        if (!isActive()) {
+          self[tab.modifierName] = "default";
+          self.update();
+        }
+      });
+
+      self.on("switchTab", function(tabId) {
+        if (tabId === tab.id) {
+          self[tab.modifierName] = "active";
+        } else {
+          self[tab.modifierName] = "default";
+        }
+      });
+
+      if (config.isDefault === true) {
+        self.activeTab = tab.id;
+      }
+    }
+
+    function switchTab(tabId, force) {
+      var tab = tabs[tabId];
+      if (typeof tabId === "string") {
+        for (var i = 0; i < tabs.length; i++) {
+          if (tabs[i].name === tabId) {
+            tabId = tabs[i].id;
+            tab = tabs[tabId];
+            break;
+          }
+        }
+      }
+      if (force || self.activeTab !== tabId) {
+        self.activeTab = tabId;
+        self.trigger("switchTab", tabId, tab);
+        self.update();
+      }
+    }
+
+    defineTab({
+      name: "phone",
+      isDefault: true,
+      tabElement: this.tabPhone,
+      modifierName: "tabIconPhoneModifier"
+    });
+
+    defineTab({
+      name: "mail",
+      tabElement: this.tabMail,
+      modifierName: "tabIconMailModifier"
+    });
+
+    defineFormHandler("formMail", "mail");
+
+    defineFormHandler("formPhone", "phone");
+
+    self.hide();
+    switchTab(this.activeTab, true);
+
+    this.phoneNumber.addEventListener("keyup", function(event) {
+      var value = event.target.value.toLowerCase().trim();
+      self.update({
+        opts: {
+          showTime: self.opts.showTime,
+          showDate: value !== ""
+        }
+      });
+    });
+
+    this.dateOption.addEventListener("change", function(event) {
+      var value = parseInt(event.target.value, 10);
+      self.update({
+        opts: {
+          showDate: self.opts.showDate,
+          showTime: value > 1
+        }
+      });
+    });
+
+    this.emailMessage.addEventListener("keyup", function(event) {
+      var value = event.target.value.trim();
+      self.update({
+        opts: {
+          showTime: self.opts.showTime,
+          showDate: self.opts.showDate,
+          showPhone2: value.length > 0
+        }
+      });
+    });
+
+    this.buttonClose.addEventListener("click", self.hide);
+
+    // ---
+
+    if (typeof self.opts.getRef === "function") {
+      self.opts.getRef(self);
+    }
+  </script>
+</sc-window>

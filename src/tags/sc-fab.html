@@ -1,0 +1,41 @@
+<sc-fab
+  class="sc-fab"
+  if="{!isHidden}"
+  style="bottom:{opts.bottom}px; right:{opts.right}px; width:{opts.size}px; height:{opts.size}px"
+>
+  <a href="javascript: void(0);" id="scButtonFab">
+    <div class="sc-fab-icon"></div>
+  </a>
+
+  <script>
+    var self = this;
+    var windowRef = self.opts.windowRef;
+
+    self.hide = function() {
+      self.isHidden = true;
+      self.trigger("hide");
+      self.update();
+    };
+
+    self.show = function() {
+      self.isHidden = false;
+      self.trigger("show");
+      self.update();
+    };
+
+    self.toggle = function() {
+      if (self.isHidden) {
+        self.show();
+      } else {
+        self.hide();
+      }
+    };
+
+    self.show();
+
+    windowRef.on("hide", self.show);
+    windowRef.on("show", self.hide);
+
+    self.scButtonFab.addEventListener("click", windowRef.toggle);
+  </script>
+</sc-fab>
